@@ -7,7 +7,7 @@ public class PlayerController : MonoBehaviour
     public event EventHandler OnDied;
     public event EventHandler OnRespawned;
 
-    public enum PlayerState { Idle, Running, Jumping, Falling, WallSliding }
+    public enum PlayerState { Idle, Running, Jumping, DoubleJumping, Falling, WallSliding }
 
     // ── Inspector ─────────────────────────────────────────────────────────────
 
@@ -24,6 +24,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float coyoteTime = 0.12f;
     [SerializeField] private float jumpBufferTime = 0.10f;
     [SerializeField] private float fastFallMultiplier = 2.5f;
+    [SerializeField][Range(0f, 1f)] private float doubleJumpForceMultiplier = 0.85f;
+    [SerializeField] [Range(0f, 1f)] private float airControlLerp = 0.2f;
 
     [Header("Detection")]
     [SerializeField] private LayerMask groundLayer;
@@ -47,6 +49,7 @@ public class PlayerController : MonoBehaviour
 
     private float coyoteTimeCounter;
     private float jumpBufferCounter;
+    private bool canDoubleJump;
 
     // ── Wall ──────────────────────────────────────────────────────────────────
 
@@ -131,6 +134,10 @@ public class PlayerController : MonoBehaviour
         {
             CurrentPlayerState = PlayerState.WallSliding;
         }
+        else if (!IsGrounded && rb.linearVelocity.y > 0f && CurrentPlayerState == PlayerState.DoubleJumping)
+        {
+            // Stay in DoubleJumping while still rising from the double jump
+        }
         else if (!IsGrounded && rb.linearVelocity.y > 0f)
         {
             CurrentPlayerState = PlayerState.Jumping;
@@ -202,11 +209,26 @@ public class PlayerController : MonoBehaviour
     private void HandleMovement()
     {
         if (wallJumpLockTimer > 0f) return;
-        rb.linearVelocity = new Vector2(moveInput.x * moveSpeed, rb.linearVelocity.y);
+
+        float targetX = moveInput.x * moveSpeed;
+
+        if (IsGrounded)
+        {
+            // Instant on ground — snappy, precise
+            rb.linearVelocity = new Vector2(targetX, rb.linearVelocity.y);
+        }
+        else
+        {
+            // Slight lerp in air — still responsive but physically distinct
+            float smoothedX = Mathf.Lerp(rb.linearVelocity.x, targetX, airControlLerp);
+            rb.linearVelocity = new Vector2(smoothedX, rb.linearVelocity.y);
+        }
     }
 
     private void HandleFlip()
     {
+        if (wallJumpLockTimer > 0f) return;
+
         if (moveInput.x > 0.01f && !IsFacingRight) Flip();
         else if (moveInput.x < -0.01f && IsFacingRight) Flip();
     }
@@ -225,8 +247,15 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateCoyoteTime()
     {
-        if (IsGrounded) coyoteTimeCounter = coyoteTime;
-        else coyoteTimeCounter -= Time.deltaTime;
+        if (IsGrounded)
+        {
+            coyoteTimeCounter = coyoteTime;
+            canDoubleJump = true;
+        }
+        else
+        {
+            coyoteTimeCounter -= Time.deltaTime;
+        }
     }
 
     private void UpdateJumpBuffer()
@@ -239,12 +268,19 @@ public class PlayerController : MonoBehaviour
     {
         if (jumpBufferCounter <= 0f) return;
 
+        // Wall jump
         if (isTouchingWall && !IsGrounded)
         {
             rb.linearVelocity = new Vector2(-wallDirection * wallJumpForceX, wallJumpForceY);
             jumpBufferCounter = 0f;
             coyoteTimeCounter = 0f;
             wallJumpLockTimer = WallJumpLockDuration;
+            canDoubleJump = true;
+
+            // Face the direction we're jumping toward (away from the wall)
+            bool shouldFaceRight = wallDirection == -1;
+            if (shouldFaceRight != IsFacingRight) Flip();
+
             return;
         }
 
@@ -254,6 +290,16 @@ public class PlayerController : MonoBehaviour
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             jumpBufferCounter = 0f;
             coyoteTimeCounter = 0f;
+            return;
+        }
+
+        // Double jump
+        if (canDoubleJump)
+        {
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce * doubleJumpForceMultiplier);
+            jumpBufferCounter = 0f;
+            canDoubleJump = false;
+            CurrentPlayerState = PlayerState.DoubleJumping;
         }
     }
 
@@ -308,6 +354,7 @@ public class PlayerController : MonoBehaviour
 
         isTouchingWall = false;
         isPressingIntoWall = false;
+        canDoubleJump = false;
         wallDirection = 0;
         coyoteTimeCounter = 0f;
         jumpBufferCounter = 0f;
