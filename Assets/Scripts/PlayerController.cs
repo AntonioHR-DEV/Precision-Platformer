@@ -9,7 +9,7 @@ public class PlayerController : MonoBehaviour
 
     public enum PlayerState { Idle, Running, Jumping, DoubleJumping, Falling, WallSliding }
 
-    // ── Inspector ─────────────────────────────────────────────────────────────
+    public static PlayerController Instance { get; private set; }
 
     [Header("Movement")]
     [SerializeField] private float moveSpeed = 8f;
@@ -80,6 +80,8 @@ public class PlayerController : MonoBehaviour
 
     private void Awake()
     {
+        Instance = this;
+
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<BoxCollider2D>();
         originalGravityScale = rb.gravityScale;
