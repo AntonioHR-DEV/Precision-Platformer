@@ -144,11 +144,11 @@ public class PlayerController : MonoBehaviour
         {
             CurrentPlayerState = PlayerState.Jumping;
         }
-        else if (!IsGrounded && rb.linearVelocity.y <= 0f)
+        else if (!IsGrounded && rb.linearVelocity.y < 0f)
         {
             CurrentPlayerState = PlayerState.Falling;
         }
-        else if (IsGrounded && Mathf.Abs(moveInput.x) > 0.01f)
+        else if (IsGrounded && Mathf.Abs(rb.linearVelocity.x) > 0.01f)
         {
             CurrentPlayerState = PlayerState.Running;
         }
@@ -277,7 +277,6 @@ public class PlayerController : MonoBehaviour
             jumpBufferCounter = 0f;
             coyoteTimeCounter = 0f;
             wallJumpLockTimer = WallJumpLockDuration;
-            canDoubleJump = true;
 
             // Face the direction we're jumping toward (away from the wall)
             bool shouldFaceRight = wallDirection == -1;

@@ -43,10 +43,13 @@ public class PlayerAnimator : MonoBehaviour
 
     private void Update()
     {
-        // Don't update state while dead — Hit animation is playing
         if (PlayerController.Instance.IsDead) return;
 
-        animator.SetInteger(StateParam, (int)PlayerController.Instance.CurrentPlayerState);
+        if (animator.GetInteger(StateParam) != (int)PlayerController.Instance.CurrentPlayerState)
+        {
+            animator.SetInteger(StateParam, (int)PlayerController.Instance.CurrentPlayerState);
+        }
+        
     }
 
     private void OnDestroy()
