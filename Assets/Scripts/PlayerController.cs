@@ -26,13 +26,17 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpBufferTime = 0.10f;
     [SerializeField] private float fastFallMultiplier = 2.5f;
     [SerializeField][Range(0f, 1f)] private float doubleJumpForceMultiplier = 0.85f;
-    [SerializeField] [Range(0f, 1f)] private float airControlLerp = 1f;
+    [SerializeField][Range(0f, 1f)] private float airControlLerp = 1f;
     [SerializeField] private float respawnDelay = 0.5f;
+    [SerializeField] private float hazardHitUpwardForce = 10f;
+    [SerializeField] private float hazardHitMinAngularVelocity = 200f;
+    [SerializeField] private float hazardHitMaxAngularVelocity = 600f;
 
     [Header("Detection")]
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private float groundCheckDistance = 0.05f;
     [SerializeField] private float wallCheckDistance = 0.05f;
+    
 
     // ── Components ────────────────────────────────────────────────────────────
 
@@ -63,9 +67,10 @@ public class PlayerController : MonoBehaviour
     private const float WallJumpLockDuration = 0.35f;
 
 
-    // ── Gravity ───────────────────────────────────────────────────────────────
+    // ── Rigidbody ───────────────────────────────────────────────────────────────
 
     private float originalGravityScale;
+    private RigidbodyConstraints2D originalConstraints;
 
     // ── Public Read-Only (consumed by PlayerAnimator) ─────────────────────────
 
@@ -87,6 +92,7 @@ public class PlayerController : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         col = GetComponent<BoxCollider2D>();
         originalGravityScale = rb.gravityScale;
+        originalConstraints = rb.constraints;
     }
 
     private void Start()
@@ -125,7 +131,7 @@ public class PlayerController : MonoBehaviour
     {
         if (other.TryGetComponent(out Spikes _))
         {
-            Die();
+            HandleHazardCollision(other);
             StartCoroutine(RespawnAfterDelay());
         }
     }
@@ -134,6 +140,31 @@ public class PlayerController : MonoBehaviour
     {
         if (GameInput.Instance == null) return;
         GameInput.Instance.OnJumpStarted -= GameInput_OnJumpStarted;
+    }
+
+    private void HandleHazardCollision(Collider2D hazardCollider)
+    {
+        if (IsDead) return;
+
+        Die();
+
+        // Determine closest contact point on the hazard collider relative to player center
+        Vector2 contactPoint = hazardCollider.ClosestPoint(transform.position);
+        bool hazardBelow = contactPoint.y < transform.position.y - 0.05f;
+
+        if (hazardBelow)
+        {
+            // Allow rotation so the player can spin
+            rb.constraints = RigidbodyConstraints2D.None;
+
+            // Remove vertical velocity, reduce horizontal velocity, and apply an upward impulse
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x * 0.5f, 0f);
+            rb.AddForce(Vector2.up * hazardHitUpwardForce, ForceMode2D.Impulse);
+        }
+        // Random angular velocity for a nice spin
+        float ang = UnityEngine.Random.Range(hazardHitMinAngularVelocity, hazardHitMaxAngularVelocity);
+        if (UnityEngine.Random.value < 0.5f) ang = -ang;
+        rb.angularVelocity = ang;
     }
 
     // =========================================================================
@@ -350,11 +381,8 @@ public class PlayerController : MonoBehaviour
         if (IsDead) return;
 
         IsDead = true;
-        rb.linearVelocity = Vector2.zero;
-        rb.gravityScale = 0f;
-
         CurrentPlayerState = PlayerState.Dead;
-
+        col.enabled = false;
         OnDied?.Invoke(this, EventArgs.Empty);
     }
 
@@ -363,8 +391,12 @@ public class PlayerController : MonoBehaviour
         IsDead = false;
 
         transform.position = position;
+        col.enabled = true;
         rb.linearVelocity = Vector2.zero;
         rb.gravityScale = originalGravityScale;
+        rb.angularVelocity = 0f;
+        transform.rotation = Quaternion.identity;
+        rb.constraints = originalConstraints;
 
         isTouchingWall = false;
         isPressingIntoWall = false;
