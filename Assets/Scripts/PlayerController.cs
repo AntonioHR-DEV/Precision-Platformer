@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody2D), typeof(BoxCollider2D))]
@@ -7,7 +8,7 @@ public class PlayerController : MonoBehaviour
     public event EventHandler OnDied;
     public event EventHandler OnRespawned;
 
-    public enum PlayerState { Idle, Running, Jumping, DoubleJumping, Falling, WallSliding }
+    public enum PlayerState { Idle, Running, Jumping, DoubleJumping, Falling, WallSliding, Dead }
 
     public static PlayerController Instance { get; private set; }
 
@@ -25,7 +26,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float jumpBufferTime = 0.10f;
     [SerializeField] private float fastFallMultiplier = 2.5f;
     [SerializeField][Range(0f, 1f)] private float doubleJumpForceMultiplier = 0.85f;
-    [SerializeField] [Range(0f, 1f)] private float airControlLerp = 0.2f;
+    [SerializeField] [Range(0f, 1f)] private float airControlLerp = 1f;
+    [SerializeField] private float respawnDelay = 0.5f;
 
     [Header("Detection")]
     [SerializeField] private LayerMask groundLayer;
@@ -117,6 +119,15 @@ public class PlayerController : MonoBehaviour
     {
         if (IsDead) return;
         HandleMovement();
+    }
+
+    private void OnTriggerEnter2D(Collider2D other)
+    {
+        if (other.TryGetComponent(out Spikes _))
+        {
+            Die();
+            StartCoroutine(RespawnAfterDelay());
+        }
     }
 
     private void OnDestroy()
@@ -342,6 +353,8 @@ public class PlayerController : MonoBehaviour
         rb.linearVelocity = Vector2.zero;
         rb.gravityScale = 0f;
 
+        CurrentPlayerState = PlayerState.Dead;
+
         OnDied?.Invoke(this, EventArgs.Empty);
     }
 
@@ -364,5 +377,13 @@ public class PlayerController : MonoBehaviour
         CurrentPlayerState = PlayerState.Idle;
 
         OnRespawned?.Invoke(this, EventArgs.Empty);
+    }
+
+    private IEnumerator RespawnAfterDelay()
+    {
+        yield return new WaitForSeconds(respawnDelay);
+
+        Vector3 respawnPosition = CheckpointManager.Instance.GetRespawnPosition();
+        Respawn(respawnPosition);
     }
 }
