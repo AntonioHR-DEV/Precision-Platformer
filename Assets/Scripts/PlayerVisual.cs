@@ -9,22 +9,25 @@ using System;
 /// Requires:  Animator component with an int parameter named "State"
 ///
 /// Animator "State" parameter values match PlayerController.PlayerState enum:
-///   0 = Idle
-///   1 = Running
-///   2 = Jumping
-///   3 = DoubleJumping
-///   4 = Falling
-///   5 = WallSliding
-///   6 = Dead
+///   0 = Appearing
+///   1 = Idle
+///   2 = Running
+///   3 = Jumping
+///   4 = DoubleJumping
+///   5 = Falling
+///   6 = WallSliding
+///   7 = Dead
+///   8 = Disappearing
 /// </summary>
 [RequireComponent(typeof(Animator))]
 public class PlayerVisual : MonoBehaviour
 {
     private static readonly int STATE_PARAM_HASH = Animator.StringToHash("State");
-    private static readonly int DOUBLE_JUMP_ANIMATION_HASH = Animator.StringToHash("DoubleJump");
+    private static readonly int APPEARING_STATE_HASH = Animator.StringToHash("Appearing");
 
     private Animator animator;
-    private AnimatorStateInfo animatorStateInfo;
+
+    public bool IsLocked { get; set; } = false;
 
     private void Awake()
     {
@@ -38,16 +41,16 @@ public class PlayerVisual : MonoBehaviour
 
     private void Update()
     {
-        animatorStateInfo = animator.GetCurrentAnimatorStateInfo(0);
-        if (!PlayerController.Instance.IsDead && animatorStateInfo.shortNameHash == DOUBLE_JUMP_ANIMATION_HASH && animatorStateInfo.normalizedTime < 1.0f)
-        {
-            // In DoubleJump animation, skipping state update to avoid interrupting the animation.
-            return;
-        }
-
-        if (animator.GetInteger(STATE_PARAM_HASH) != (int)PlayerController.Instance.CurrentPlayerState)
+        if (!IsLocked && animator.GetInteger(STATE_PARAM_HASH) != (int)PlayerController.Instance.CurrentPlayerState)
         {
             animator.SetInteger(STATE_PARAM_HASH, (int)PlayerController.Instance.CurrentPlayerState);
+        }
+
+        AnimatorStateInfo currentStateInfo = animator.GetCurrentAnimatorStateInfo(0);
+
+        if (currentStateInfo.shortNameHash == APPEARING_STATE_HASH && currentStateInfo.normalizedTime >= 1f)
+        {
+            PlayerController.Instance.CurrentPlayerState = PlayerController.PlayerState.Falling;
         }
     }
 

@@ -8,7 +8,7 @@ public class PlayerController : MonoBehaviour
     public event EventHandler OnDied;
     public event EventHandler OnRespawned;
 
-    public enum PlayerState { Idle, Running, Jumping, DoubleJumping, Falling, WallSliding, Dead }
+    public enum PlayerState { Appearing, Idle, Running, Jumping, DoubleJumping, Falling, WallSliding, Dead, Disappearing }
 
     public static PlayerController Instance { get; private set; }
 
@@ -49,7 +49,7 @@ public class PlayerController : MonoBehaviour
 
     // ── State ─────────────────────────────────────────────────────────────────
 
-    public PlayerState CurrentPlayerState { get; private set; }
+    public PlayerState CurrentPlayerState { get; set; }
 
     // ── Timers ────────────────────────────────────────────────────────────────
 
@@ -98,11 +98,30 @@ public class PlayerController : MonoBehaviour
     private void Start()
     {
         GameInput.Instance.OnJumpStarted += GameInput_OnJumpStarted;
+
+        transform.position = CheckpointManager.Instance.GetRespawnPosition();
+        CurrentPlayerState = PlayerState.Appearing;
     }
 
     private void Update()
     {
         if (IsDead) return;
+
+        if (CurrentPlayerState == PlayerState.Appearing || CurrentPlayerState == PlayerState.Disappearing)
+        {
+            // During appearing/disappearing, ignore input and keep player locked in place.
+            if (rb.gravityScale != 0f)
+                rb.gravityScale = 0f;
+            if (rb.linearVelocity != Vector2.zero)
+                rb.linearVelocity = Vector2.zero;
+            return;
+        }
+        else
+        {
+            // Ensure gravity is normal after appearing/disappearing finishes
+            if (rb.gravityScale == 0f)
+                rb.gravityScale = originalGravityScale;
+        }
 
         moveInput = GameInput.Instance.MoveInput;
 
@@ -123,7 +142,7 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (IsDead) return;
+        if (CurrentPlayerState == PlayerState.Appearing || CurrentPlayerState == PlayerState.Disappearing || IsDead) return;
         HandleMovement();
     }
 
@@ -393,7 +412,6 @@ public class PlayerController : MonoBehaviour
         transform.position = position;
         col.enabled = true;
         rb.linearVelocity = Vector2.zero;
-        rb.gravityScale = originalGravityScale;
         rb.angularVelocity = 0f;
         transform.rotation = Quaternion.identity;
         rb.constraints = originalConstraints;
@@ -406,7 +424,7 @@ public class PlayerController : MonoBehaviour
         jumpBufferCounter = 0f;
         wallJumpLockTimer = 0f;
 
-        CurrentPlayerState = PlayerState.Idle;
+        CurrentPlayerState = PlayerState.Appearing;
 
         OnRespawned?.Invoke(this, EventArgs.Empty);
     }
