@@ -24,6 +24,7 @@ public class PlayerVisual : MonoBehaviour
 {
     private static readonly int STATE_PARAM_HASH = Animator.StringToHash("State");
     private static readonly int APPEARING_STATE_HASH = Animator.StringToHash("Appearing");
+    private static readonly int DISAPPEARING_STATE_HASH = Animator.StringToHash("Disappearing");
 
     private Animator animator;
 
@@ -51,6 +52,11 @@ public class PlayerVisual : MonoBehaviour
         if (currentStateInfo.shortNameHash == APPEARING_STATE_HASH && currentStateInfo.normalizedTime >= 1f)
         {
             PlayerController.Instance.CurrentPlayerState = PlayerController.PlayerState.Falling;
+        }
+
+        if (currentStateInfo.shortNameHash == DISAPPEARING_STATE_HASH && currentStateInfo.normalizedTime >= 1f)
+        {
+            PlayerController.Instance.gameObject.SetActive(false);
         }
     }
 

@@ -41,6 +41,7 @@ public class PlayerController : MonoBehaviour
     // ── Components ────────────────────────────────────────────────────────────
 
     private Rigidbody2D rb;
+    public Rigidbody2D Rb => rb;
     private BoxCollider2D col;
 
     // ── Input ─────────────────────────────────────────────────────────────────
@@ -71,6 +72,10 @@ public class PlayerController : MonoBehaviour
 
     private float originalGravityScale;
     private RigidbodyConstraints2D originalConstraints;
+
+    // ── Start/End Checkpoint ─────────────────────────────────────────────────
+    public bool HasStarted { get; set; } = false;
+    public bool HasReachedEnd { get; set; } = false;
 
     // ── Public Read-Only (consumed by PlayerAnimator) ─────────────────────────
 
@@ -142,7 +147,7 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (CurrentPlayerState == PlayerState.Appearing || CurrentPlayerState == PlayerState.Disappearing || IsDead) return;
+        if (CurrentPlayerState == PlayerState.Appearing || CurrentPlayerState == PlayerState.Disappearing || IsDead || !HasStarted || HasReachedEnd) return;
         HandleMovement();
     }
 
@@ -153,6 +158,28 @@ public class PlayerController : MonoBehaviour
             HandleHazardCollision(other);
             StartCoroutine(RespawnAfterDelay());
         }
+
+        if (other.TryGetComponent(out EndCheckpoint _))
+        {
+            HasReachedEnd = true;
+            rb.linearVelocity = Vector2.zero;
+            StartCoroutine(DisappearRoutine());
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.TryGetComponent(out StartCheckpoint _) && !HasStarted)
+        {
+            HasStarted = true;
+        }
+    }
+
+    private IEnumerator DisappearRoutine()
+    {
+        float disappearingDelay = 0.5f;
+        yield return new WaitForSeconds(disappearingDelay);
+        CurrentPlayerState = PlayerState.Disappearing;
     }
 
     private void OnDestroy()
@@ -347,7 +374,7 @@ public class PlayerController : MonoBehaviour
         }
 
         // Regular jump (includes coyote time)
-        if (coyoteTimeCounter > 0f)
+        if (coyoteTimeCounter > 0f && IsGrounded)
         {
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
             jumpBufferCounter = 0f;
