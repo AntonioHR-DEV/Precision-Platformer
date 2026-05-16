@@ -77,7 +77,7 @@ public class PlayerController : MonoBehaviour
     public bool HasStarted { get; set; } = false;
     public bool HasReachedEnd { get; set; } = false;
 
-    // ── Public Read-Only (consumed by PlayerAnimator) ─────────────────────────
+    // ── Public Read-Only  ─────────────────────────────────────────────────────
 
     public float XSpeed => Mathf.Abs(rb.linearVelocity.x);
     public float YVelocity => rb.linearVelocity.y;
@@ -85,6 +85,7 @@ public class PlayerController : MonoBehaviour
     public bool IsWallSliding => CurrentPlayerState == PlayerState.WallSliding;
     public bool IsFacingRight { get; private set; } = true;
     public bool IsDead { get; private set; }
+    public int DeathCount { get; private set; }
 
     // =========================================================================
     // Unity Lifecycle
@@ -425,7 +426,7 @@ public class PlayerController : MonoBehaviour
     public void Die()
     {
         if (IsDead) return;
-
+        DeathCount++;
         IsDead = true;
         CurrentPlayerState = PlayerState.Dead;
         col.enabled = false;
