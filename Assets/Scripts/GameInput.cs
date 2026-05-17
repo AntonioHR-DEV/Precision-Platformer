@@ -40,8 +40,7 @@ public class GameInput : MonoBehaviour
         // Reload active scene when R is pressed (for testing)
         if (UnityEngine.InputSystem.Keyboard.current.rKey.wasPressedThisFrame)
         {
-            UnityEngine.SceneManagement.SceneManager.LoadScene(
-                UnityEngine.SceneManagement.SceneManager.GetActiveScene().buildIndex);
+            SceneLoader.Instance.ReloadCurrentScene();
         }
     }
 

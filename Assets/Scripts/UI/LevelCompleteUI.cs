@@ -149,18 +149,18 @@ public class LevelCompleteUI : MonoBehaviour
     // Buttons
     // =========================================================================
 
-    private void OnNextLevelClicked()
-    {
-        // TODO: implement scene loading for next level
-    }
-
     private void OnRetryClicked()
     {
-        // TODO: implement scene reload
+        SceneLoader.Instance.ReloadCurrentScene();
+    }
+
+    private void OnNextLevelClicked()
+    {
+        SceneLoader.Instance.LoadNextScene();
     }
 
     private void OnLevelsClicked()
     {
-        // TODO: implement levls scene load
+        SceneLoader.Instance.LoadScene(SceneLoader.Scene.LevelSelect);
     }
 }
