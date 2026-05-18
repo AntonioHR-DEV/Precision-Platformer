@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public class LevelCompleteUI : MonoBehaviour
@@ -72,6 +73,8 @@ public class LevelCompleteUI : MonoBehaviour
 
         float showDelay = 1f;
         Invoke(nameof(Show), showDelay);
+        int levelIndex = SceneManager.GetActiveScene().buildIndex - 1;
+        SaveSystem.Instance.SetLevelCompleted(levelIndex, LevelTimer.Instance.GetStarRating());
     }
 
     // =========================================================================
