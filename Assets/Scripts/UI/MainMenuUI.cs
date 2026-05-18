@@ -5,7 +5,7 @@ using UnityEngine.UI;
 /// Attach to: SceneManager GameObject in the MainMenu scene.
 /// Requires:  SceneLoader singleton present in scene.
 /// </summary>
-public class MainMenu : MonoBehaviour
+public class MainMenuUI : MonoBehaviour
 {
     [SerializeField] private Button playButton;
     [SerializeField] private Button settingsButton;

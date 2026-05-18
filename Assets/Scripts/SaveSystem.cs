@@ -17,7 +17,7 @@ public class SaveSystem : MonoBehaviour
     public static SaveSystem Instance { get; private set; }
 
     private const string SAVE_FILE_NAME = "savedata.json";
-    private const int TOTAL_LEVELS = 10;
+    public readonly int TOTAL_LEVELS = 10;
 
     private string SavePath => Path.Combine(Application.persistentDataPath, SAVE_FILE_NAME);
 
@@ -201,6 +201,7 @@ public class SaveSystem : MonoBehaviour
     // =========================================================================
 
     /// <summary>Deletes the save file and resets to a fresh save. Useful for testing.</summary>
+    [ContextMenu("Delete Save File")]
     public void DeleteSave()
     {
         if (File.Exists(SavePath))
