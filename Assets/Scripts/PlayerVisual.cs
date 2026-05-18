@@ -37,11 +37,19 @@ public class PlayerVisual : MonoBehaviour
 
     private void Start()
     {
+        if (PlayerController.Instance == null) return;
+
         PlayerController.Instance.OnRespawned += PlayerController_OnRespawned;
     }
 
     private void Update()
     {
+        if (PlayerController.Instance == null)
+        {
+            animator.SetInteger(STATE_PARAM_HASH, (int)PlayerController.PlayerState.Idle);
+            return;
+        }
+
         if (!IsLocked && animator.GetInteger(STATE_PARAM_HASH) != (int)PlayerController.Instance.CurrentPlayerState)
         {
             animator.SetInteger(STATE_PARAM_HASH, (int)PlayerController.Instance.CurrentPlayerState);
@@ -62,6 +70,8 @@ public class PlayerVisual : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (PlayerController.Instance == null) return;
+
         PlayerController.Instance.OnRespawned -= PlayerController_OnRespawned;
     }
 
