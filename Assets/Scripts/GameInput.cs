@@ -6,6 +6,7 @@ public class GameInput : MonoBehaviour
     public static GameInput Instance { get; private set; }
 
     public event EventHandler OnJumpStarted;
+    public event EventHandler OnPauseStarted;
 
     private InputActions inputActions;
 
@@ -28,6 +29,7 @@ public class GameInput : MonoBehaviour
         inputActions = new InputActions();
 
         inputActions.Player.Jump.started += _ => OnJumpStarted?.Invoke(this, EventArgs.Empty);
+        inputActions.Player.Pause.started += _ => OnPauseStarted?.Invoke(this, EventArgs.Empty);
 
         inputActions.Player.Enable();
     }
@@ -36,12 +38,6 @@ public class GameInput : MonoBehaviour
     {
         // Poll move each frame so MoveInput is always current
         MoveInput = inputActions.Player.Move.ReadValue<Vector2>();
-
-        // Reload active scene when R is pressed (for testing)
-        if (UnityEngine.InputSystem.Keyboard.current.rKey.wasPressedThisFrame)
-        {
-            SceneLoader.Instance.ReloadCurrentScene();
-        }
     }
 
     private void OnDestroy()

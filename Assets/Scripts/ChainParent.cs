@@ -6,6 +6,11 @@ public class ChainParent : MonoBehaviour
 
     private void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
         Instance = this;
         transform.position = Vector3.zero;
     }

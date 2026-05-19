@@ -21,7 +21,6 @@ public class ScreenshotTaker : MonoBehaviour
             return;
         }
         Instance = this;
-        DontDestroyOnLoad(gameObject);
 
         screenshotFolder = Path.Combine(Application.dataPath, "../Screenshots");
 

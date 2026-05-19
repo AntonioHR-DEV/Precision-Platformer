@@ -7,6 +7,8 @@ using UnityEngine.UI;
 
 public class LevelCompleteUI : MonoBehaviour
 {
+    public static LevelCompleteUI Instance { get; private set; }
+
     [Header("References")]
     [SerializeField] private RectTransform panelRect;
     [SerializeField] private TextMeshProUGUI titleText;
@@ -31,9 +33,20 @@ public class LevelCompleteUI : MonoBehaviour
     private float elapsedBlinkTime = 0f;
     private int titleColorIndex = 0;
 
+    public bool IsVisible { get; private set; }
+
     // =========================================================================
     // Unity Lifecycle
     // =========================================================================
+    private void Awake()
+    {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        Instance = this;
+    }
 
     private void Start()
     {
@@ -74,7 +87,11 @@ public class LevelCompleteUI : MonoBehaviour
         float showDelay = 1f;
         Invoke(nameof(Show), showDelay);
         int levelIndex = SceneManager.GetActiveScene().buildIndex - 1;
-        SaveSystem.Instance.SetLevelCompleted(levelIndex, LevelTimer.Instance.GetStarRating());
+
+        if (SaveSystem.Instance != null)
+        {
+            SaveSystem.Instance.SetLevelCompleted(levelIndex, LevelTimer.Instance.GetStarRating());
+        }
     }
 
     // =========================================================================
@@ -111,6 +128,7 @@ public class LevelCompleteUI : MonoBehaviour
         gameObject.SetActive(true);
         StopAllCoroutines();
         StartCoroutine(SlideRoutine(hiddenY, shownY));
+        IsVisible = true;
     }
 
     private void Hide()
@@ -122,6 +140,7 @@ public class LevelCompleteUI : MonoBehaviour
             panelRect.anchoredPosition = pos;
         }
         gameObject.SetActive(false);
+        IsVisible = false;
     }
 
     private IEnumerator SlideRoutine(float fromY, float toY)

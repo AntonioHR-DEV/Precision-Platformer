@@ -58,16 +58,19 @@ public class SceneLoader : MonoBehaviour
 
     public void LoadScene(Scene scene)
     {
+        Time.timeScale = 1f;
         StartCoroutine(LoadSceneRoutine(scene));
     }
 
     public void LoadSceneByIndex(int buildIndex)
     {
+        Time.timeScale = 1f;
         StartCoroutine(LoadSceneByIndexRoutine(buildIndex));
     }
 
     public void ReloadCurrentScene()
     {
+        Time.timeScale = 1f;
         LoadSceneByIndex(SceneManager.GetActiveScene().buildIndex);
     }
 
@@ -77,6 +80,7 @@ public class SceneLoader : MonoBehaviour
     /// </summary>
     public void LoadNextScene()
     {
+        Time.timeScale = 1f;
         int nextIndex = SceneManager.GetActiveScene().buildIndex + 1;
 
         if (nextIndex < SceneManager.sceneCountInBuildSettings)
