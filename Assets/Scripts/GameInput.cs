@@ -12,6 +12,7 @@ public class GameInput : MonoBehaviour
 
     // -- Properties -----------------------------------------------------------
     public Vector2 MoveInput { get; private set; }
+    public InputActions InputActions => inputActions;
 
     // =========================================================================
     // Unity Lifecycle
@@ -30,8 +31,6 @@ public class GameInput : MonoBehaviour
 
         inputActions.Player.Jump.started += _ => OnJumpStarted?.Invoke(this, EventArgs.Empty);
         inputActions.Player.Pause.started += _ => OnPauseStarted?.Invoke(this, EventArgs.Empty);
-
-        inputActions.Player.Enable();
     }
 
     private void Update()
@@ -44,5 +43,18 @@ public class GameInput : MonoBehaviour
     {
         inputActions.Player.Disable();
         inputActions.Dispose();
+    }
+
+    /// <summary>
+    /// Call this from a Level Manager or Player Controller when a gameplay level loads.
+    /// </summary>
+    public void EnablePlayerInput()
+    {
+        inputActions?.Player.Enable();
+    }
+
+    public void DisablePlayerInput()
+    {
+        inputActions?.Player.Disable();
     }
 }

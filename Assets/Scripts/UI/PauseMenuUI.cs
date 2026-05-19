@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,26 +7,18 @@ using UnityEngine.UI;
 ///            A Canvas with a panel RectTransform that slides in from off-screen.
 ///            GameInput must expose an OnPauseStarted event.
 /// </summary>
-public class PauseMenu : MonoBehaviour
+public class PauseMenu : BasePanel
 {
     public static PauseMenu Instance { get; private set; }
 
     [Header("References")]
-    [SerializeField] private RectTransform panelRect;
     [SerializeField] private Button pauseButton;
     [SerializeField] private Button resumeButton;
     [SerializeField] private Button restartButton;
     [SerializeField] private Button settingsButton;
     [SerializeField] private Button levelsButton;
-    [SerializeField] private GameObject settingsPanel;
-
-    [Header("Slide Animation")]
-    [SerializeField] private float hiddenY = -1200f;
-    [SerializeField] private float shownY = 0f;
-    [SerializeField] private float slideDuration = 0.3f;
 
     private bool isPaused;
-    private Coroutine slideCoroutine;
 
     // =========================================================================
     // Unity Lifecycle
@@ -52,9 +43,6 @@ public class PauseMenu : MonoBehaviour
         restartButton.onClick.AddListener(Restart);
         settingsButton.onClick.AddListener(OpenSettings);
         levelsButton.onClick.AddListener(GoToLevelSelect);
-
-        if (settingsPanel != null)
-            settingsPanel.SetActive(false);
 
         SnapHidden();
     }
@@ -91,14 +79,14 @@ public class PauseMenu : MonoBehaviour
     {
         isPaused = true;
         Time.timeScale = 0f;
-        SlideIn();
+        Show();
     }
 
     private void Resume()
     {
         isPaused = false;
         Time.timeScale = 1f;
-        SlideOut();
+        Hide();
     }
 
     // =========================================================================
@@ -112,8 +100,11 @@ public class PauseMenu : MonoBehaviour
 
     private void OpenSettings()
     {
-        if (settingsPanel != null)
-            settingsPanel.SetActive(true);
+        Hide();
+        SettingsUI.Instance.ShowWithDelay(slideDuration, () => 
+        {
+            if (isPaused) Show();
+        });
     }
 
     private void GoToLevelSelect()
@@ -121,59 +112,7 @@ public class PauseMenu : MonoBehaviour
         SceneLoader.Instance.LoadScene(SceneLoader.Scene.LevelSelect);
     }
 
-    // =========================================================================
-    // Slide Animation
-    // =========================================================================
-
-    private void SlideIn()
-    {
-        if (slideCoroutine != null) StopCoroutine(slideCoroutine);
-        gameObject.SetActive(true);
-        slideCoroutine = StartCoroutine(SlideRoutine(hiddenY, shownY));
-    }
-
-    private void SlideOut()
-    {
-        if (slideCoroutine != null) StopCoroutine(slideCoroutine);
-        slideCoroutine = StartCoroutine(SlideOutRoutine());
-    }
-
-    private void SnapHidden()
-    {
-        if (panelRect == null) return;
-        Vector2 pos = panelRect.anchoredPosition;
-        pos.y = hiddenY;
-        panelRect.anchoredPosition = pos;
-        gameObject.SetActive(false);
-    }
-
-    private IEnumerator SlideRoutine(float fromY, float toY)
-    {
-        float elapsed = 0f;
-
-        while (elapsed < slideDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / slideDuration);
-            float smoothT = t * t * (3f - 2f * t);
-
-            Vector2 pos = panelRect.anchoredPosition;
-            pos.y = Mathf.Lerp(fromY, toY, smoothT);
-            panelRect.anchoredPosition = pos;
-
-            yield return null;
-        }
-
-        Vector2 finalPos = panelRect.anchoredPosition;
-        finalPos.y = toY;
-        panelRect.anchoredPosition = finalPos;
-    }
-
-    private IEnumerator SlideOutRoutine()
-    {
-        yield return StartCoroutine(SlideRoutine(shownY, hiddenY));
-        gameObject.SetActive(false);
-    }
+    // Slide animation is provided by BasePanel
 
     // =========================================================================
     // Public State

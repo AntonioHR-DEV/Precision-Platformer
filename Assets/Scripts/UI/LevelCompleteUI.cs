@@ -1,16 +1,14 @@
 using System;
-using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
-public class LevelCompleteUI : MonoBehaviour
+public class LevelCompleteUI : BasePanel
 {
     public static LevelCompleteUI Instance { get; private set; }
 
     [Header("References")]
-    [SerializeField] private RectTransform panelRect;
     [SerializeField] private TextMeshProUGUI titleText;
     [SerializeField] private TextMeshProUGUI statsText;
     [SerializeField] private Image[] starImageArray;
@@ -22,18 +20,11 @@ public class LevelCompleteUI : MonoBehaviour
     [SerializeField] private Color starActivatedColor = Color.yellow;
     [SerializeField] private Color starDeactivatedColor = Color.grey;
 
-    [Header("Slide Animation")]
-    [SerializeField] private float hiddenY = -1200f;
-    [SerializeField] private float shownY = 0f;
-    [SerializeField] private float slideDuration = 0.5f;
-
     [Header("Title Blinking")]
     [SerializeField] private Color[] titleColors;
     [SerializeField] private float blinkInterval = .1f;
     private float elapsedBlinkTime = 0f;
     private int titleColorIndex = 0;
-
-    public bool IsVisible { get; private set; }
 
     // =========================================================================
     // Unity Lifecycle
@@ -57,7 +48,7 @@ public class LevelCompleteUI : MonoBehaviour
         levelsButton.onClick.AddListener(OnLevelsClicked);
 
         ResetStars();
-        Hide();
+        SnapHidden();
     }
 
     private void Update()
@@ -85,9 +76,9 @@ public class LevelCompleteUI : MonoBehaviour
         UpdateVisual();
 
         float showDelay = 1f;
-        Invoke(nameof(Show), showDelay);
+        ShowWithDelay(showDelay);
+        
         int levelIndex = SceneManager.GetActiveScene().buildIndex - 1;
-
         if (SaveSystem.Instance != null)
         {
             SaveSystem.Instance.SetLevelCompleted(levelIndex, LevelTimer.Instance.GetStarRating());
@@ -117,54 +108,6 @@ public class LevelCompleteUI : MonoBehaviour
     {
         foreach (Image starImage in starImageArray)
             starImage.color = starDeactivatedColor;
-    }
-
-    // =========================================================================
-    // Show / Hide
-    // =========================================================================
-
-    private void Show()
-    {
-        gameObject.SetActive(true);
-        StopAllCoroutines();
-        StartCoroutine(SlideRoutine(hiddenY, shownY));
-        IsVisible = true;
-    }
-
-    private void Hide()
-    {
-        if (panelRect != null)
-        {
-            Vector2 pos = panelRect.anchoredPosition;
-            pos.y = hiddenY;
-            panelRect.anchoredPosition = pos;
-        }
-        gameObject.SetActive(false);
-        IsVisible = false;
-    }
-
-    private IEnumerator SlideRoutine(float fromY, float toY)
-    {
-        float elapsed = 0f;
-
-        while (elapsed < slideDuration)
-        {
-            elapsed += Time.unscaledDeltaTime;
-            float t = Mathf.Clamp01(elapsed / slideDuration);
-
-            // Smoothstep for a natural ease-in-out feel
-            float smoothT = t * t * (3f - 2f * t);
-
-            Vector2 pos = panelRect.anchoredPosition;
-            pos.y = Mathf.Lerp(fromY, toY, smoothT);
-            panelRect.anchoredPosition = pos;
-
-            yield return null;
-        }
-
-        Vector2 finalPos = panelRect.anchoredPosition;
-        finalPos.y = toY;
-        panelRect.anchoredPosition = finalPos;
     }
 
     // =========================================================================

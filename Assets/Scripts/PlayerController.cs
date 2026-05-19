@@ -103,6 +103,7 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
+        GameInput.Instance.EnablePlayerInput();
         GameInput.Instance.OnJumpStarted += GameInput_OnJumpStarted;
 
         transform.position = CheckpointManager.Instance.GetRespawnPosition();
